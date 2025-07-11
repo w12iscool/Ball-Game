@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "box2d/box2d.h"
 #include "TileMaps.h"
+#include "Ball.h"
 
 #include <iostream>
 
@@ -15,6 +16,7 @@ private:
 	b2BodyId bodyId = {};
 
 	TileMaps currentTileMap;
+	Ball plr;
 public:
 	void startUp();
 	void update();

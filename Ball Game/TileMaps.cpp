@@ -84,10 +84,34 @@ void TileMaps::renderCurrentMap()
 	{
 		for (int x{ 0 }; x < 80; ++x)
 		{
-			std::cout << (*levelArray[currentLevelNum].levelMap)[y][x];
+			int tile = (*levelArray[currentLevelNum].levelMap)[y][x];
+			Color tileColor = BLUE;
+
+			if (tile == tileType::block)
+				tileColor = BLACK;
+			if (tile == tileType::lava)
+				tileColor = RED;
+			if (tile == tileType::goal)
+				tileColor = YELLOW;
+
+			DrawRectangle(x * 16, y * 16, m_tileSize, m_tileSize, tileColor);
+
+			if (tile == tileType::slant || tile == tileType::right_slant)
+			{
+				float offset = 6.0f;
+				Vector2 topLeft = { (float)(x * 16), (float)(y * 16) + offset };
+				Vector2 bottomRight = { (float)((x + 1) * 16), (float)((y + 1) * 16) + offset };
+				Vector2 topRight = { (float)((x + 1) * 16), (float)(y * 16) + offset };
+				Vector2 bottomLeft = { (float)(x * 16), (float)((y + 1) * 16) + offset };
+
+				if (tile == tileType::slant)
+					DrawLineEx(topLeft, bottomRight, 20, BLACK);
+				else if (tile == tileType::right_slant)
+					DrawLineEx(topRight, bottomLeft, 20, BLACK);
+
+			}
 		}
-		std::cout << "\n";
-	}
+	} 
 }
 
 void TileMaps::clearCurrentMap()
@@ -104,4 +128,43 @@ void TileMaps::clearCurrentMap()
 void TileMaps::addLevel()
 {
 	++currentLevelNum;
+}
+
+void TileMaps::setupBox2dTiles(b2WorldId& worldid)
+{
+	if (m_tilesInitialized)
+		return;
+	m_tilesInitialized = true;
+	for (float y{ 0 }; y < 45; ++y)
+	{
+		for (float x{ 0 }; x < 80; ++x)
+		{
+			int tile = (*levelArray[currentLevelNum].levelMap)[y][x];
+
+			if (tile == tileType::block)
+			{
+				b2BodyDef bodyDef = b2DefaultBodyDef();
+				bodyDef.type = b2_staticBody;
+				bodyDef.position = { ((x * 16) + 8.0f) / 20, ((y * 16) + 8.0f) / 20 };
+				b2BodyId tileBodyId = b2CreateBody(worldid, &bodyDef);
+
+				b2Polygon dynamicBox = b2MakeBox(0.5f, 0.5f);
+				b2ShapeDef shapeDef = b2DefaultShapeDef();
+				shapeDef.density = 1.0f;
+				shapeDef.material.friction = 0.3f;
+				b2CreatePolygonShape(tileBodyId, &shapeDef, &dynamicBox);
+				bodies.push_back(tileBodyId);
+
+				if (b2Body_IsValid)
+				{
+					std::cout << "initialized!";
+				}
+			}
+		}
+	}
+}
+
+std::vector<b2BodyId> TileMaps::returnBodies()
+{
+	return bodies;
 }

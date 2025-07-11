@@ -46,7 +46,8 @@ enum tileType
 	slant,
 	goal,
 	lava,
-	spawn
+	spawn,
+	right_slant
 };
 
 class TileMaps
@@ -54,6 +55,8 @@ class TileMaps
 private:
 	int m_tileSize{ 20 };
 	int currentLevelNum{ 0 };
+	std::vector<b2BodyId> bodies;
+	bool m_tilesInitialized{ false };
 public:
 	// Set member functions
 	void InitLevels();
@@ -67,4 +70,6 @@ public:
 	void renderCurrentMap();
 	void clearCurrentMap();
 	void addLevel();
+	void setupBox2dTiles(b2WorldId& worldid);
+	std::vector<b2BodyId> returnBodies();
 };

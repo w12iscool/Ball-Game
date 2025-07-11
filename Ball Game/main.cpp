@@ -11,7 +11,7 @@ int main()
 	{
 		game.update();
 		BeginDrawing();
-		ClearBackground(RAYWHITE);
+		ClearBackground(BLUE);
 		game.render();
 		EndDrawing();
 	}
