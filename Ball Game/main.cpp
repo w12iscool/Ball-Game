@@ -7,11 +7,11 @@ int main()
 	GameEngine game;
 	
 	game.startUp();
+	
 	while (!WindowShouldClose())
 	{
 		game.update();
 		BeginDrawing();
-		ClearBackground(BLUE);
 		game.render();
 		EndDrawing();
 	}

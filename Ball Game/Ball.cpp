@@ -15,6 +15,16 @@ Color Ball::getColor()
 	return m_color;
 }
 
+b2BodyId Ball::getBodyId()
+{
+	return m_bodyId;
+}
+
+bool Ball::getIsOnground()
+{
+	return m_isOnGround;
+}
+
 void Ball::setupBody(b2WorldId& worldId)
 {
 	
@@ -27,10 +37,10 @@ void Ball::setupBody(b2WorldId& worldId)
 	circle.center = { m_pos.x / 20, m_pos.y / 20 };
 	circle.radius = m_radius / 20;
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
-	shapeDef.density = 1.0f;
-	shapeDef.material.friction = 0.0f;
-	shapeDef.material.restitution = 0.5f;
-	b2CreateCircleShape(m_bodyId, &shapeDef, &circle);
+	shapeDef.density = 0.5f;
+	shapeDef.material.friction = 10.0f;
+	m_shapeId = b2CreateCircleShape(m_bodyId, &shapeDef, &circle);
+	
 }
 
 void Ball::renderPlr()
@@ -55,20 +65,26 @@ void Ball::initCamera()
 
 void Ball::handleMovement(b2WorldId& worldId)
 {
+	b2Body_SetLinearDamping(m_bodyId, 1.0f);
+
 	if (IsKeyDown(KEY_D))
 	{
-		b2Vec2 force = { 10.0f, 0.0f };
-		b2Body_ApplyForceToCenter(m_bodyId, force, true);
+		b2Vec2 force = { 0.3f, 0.0f };
+		b2Body_ApplyLinearImpulseToCenter(m_bodyId, force, true);
 	}
 	if (IsKeyDown(KEY_A))
 	{
-		b2Vec2 force = { -10.0f, 0.0f };
-		b2Body_ApplyForceToCenter(m_bodyId, force, true);
-	}
-	if (IsKeyPressed(KEY_W))
-	{
-		b2Vec2 force = { 0.0f, -30.0f };
+		b2Vec2 force = { -0.3f, 0.0f };
 		b2Body_ApplyLinearImpulseToCenter(m_bodyId, force, true);
-		
 	}
+	if (IsKeyPressed(KEY_W) && m_isOnGround)
+	{
+		b2Vec2 force = { 0.0f, -20.0f };
+		b2Body_ApplyLinearImpulseToCenter(m_bodyId, force, true);
+	}
+}
+
+void Ball::setIsOnGround(bool onGround)
+{
+	m_isOnGround = onGround;
 }

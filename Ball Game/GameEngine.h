@@ -5,6 +5,7 @@
 #include "Ball.h"
 
 #include <iostream>
+#include <memory>
 
 const int screenWidth{ 1280 };
 const int screenHeight{ 720 };

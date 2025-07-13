@@ -1,6 +1,7 @@
 #pragma once
 #include "raylib.h"
 #include "box2d/box2d.h"
+#include "Ball.h"
 
 #include <vector>
 #include <array>
@@ -36,6 +37,7 @@ extern struct map {
 };
 
 extern map lvl1;
+extern map lvl2;
 
 extern std::vector<map> levelArray;
 
@@ -56,8 +58,13 @@ private:
 	int m_tileSize{ 20 };
 	int currentLevelNum{ 0 };
 	std::vector<b2BodyId> bodies;
+	b2BodyId tileBodyId = {};
 	bool m_tilesInitialized{ false };
+	std::unique_ptr<Texture2D> blockTexture = std::make_unique<Texture2D>();
+	std::unique_ptr<Texture2D> lavaTexture = std::make_unique<Texture2D>();
+	std::unique_ptr<Texture2D> skyTexture = std::make_unique<Texture2D>();
 public:
+	
 	// Set member functions
 	void InitLevels();
 	void setCurrentLevelNum(int lvl);
@@ -72,4 +79,6 @@ public:
 	void addLevel();
 	void setupBox2dTiles(b2WorldId& worldid);
 	std::vector<b2BodyId> returnBodies();
+	void handleCollision(Ball& plr, b2WorldId& worldId);
+	void InitTextures();
 };
