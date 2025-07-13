@@ -50,6 +50,7 @@ Vector2 returnPosFromTile(int y, int x)
 
 std::ifstream level1File("./level1.csv");
 std::ifstream level2File("./level2.csv");
+std::ifstream level3File("./level3.csv");
 
 map lvl1
 {
@@ -61,13 +62,24 @@ map lvl2
 	returnMapFromCsv(level2File), false, "2", returnPosFromTile(37, 4)
 };
 
+map lvl3
+{
+	returnMapFromCsv(level3File), false, "3", returnPosFromTile(40, 2)
+};
+
 extern std::vector<map> levelArray{};
 
+
+void TileMaps::tpPlrToStartPos(Ball& plr)
+{
+	b2Body_SetTransform(plr.getBodyId(), b2Vec2{ levelArray[currentLevelNum].startPos.x / 20, levelArray[currentLevelNum].startPos.y / 20 }, b2Rot{ 1.0f });
+}
 
 void TileMaps::InitLevels()
 {
 	levelArray.push_back(std::move(lvl1));
 	levelArray.push_back(std::move(lvl2));
+	levelArray.push_back(std::move(lvl3));
 }
 
 void TileMaps::setCurrentLevelNum(int lvl)
@@ -108,6 +120,24 @@ void TileMaps::renderCurrentMap()
 			{
 				tileColor = BLUE;
 				DrawTexture((*skyTexture), x * 16, y * 16, WHITE);
+			}
+			else if (tile == tileType::physics_blocks)
+			{
+				tileColor = RAYWHITE;
+				for (auto& physicsBox : dynamicBodies)
+				{
+					b2Vec2 position = b2Body_GetPosition(physicsBox);
+					b2Rot rotation = b2Body_GetRotation(physicsBox);
+					float angleRadians = atan2f(rotation.s, rotation.c);
+
+					float angleDegrees = angleRadians * (180.0f / 3.14159265f);
+
+					float x = position.x * 20;
+					float y = position.y * 20;
+
+					Rectangle tileRect = { x, y, m_tileSize, m_tileSize };
+					DrawRectanglePro(tileRect, Vector2(m_tileSize / 2, m_tileSize / 2), angleDegrees, RAYWHITE);
+				}
 			}
 			else
 			{
@@ -182,12 +212,32 @@ void TileMaps::setupBox2dTiles(b2WorldId& worldid)
 				shapeDef.material.friction = 0.3f;
 				b2CreatePolygonShape(tileBodyId, &shapeDef, &dynamicBox);
 				bodies.push_back(tileBodyId);
-
-				if (b2Body_IsValid(tileBodyId))
-				{
-					std::cout << "initialized!";
-				}
 				std::cout << bodies.size();
+			}
+			if (tile == tileType::physics_blocks)
+			{
+				b2BodyDef bodyDef = b2DefaultBodyDef();
+				bodyDef.type = b2_dynamicBody;
+				bodyDef.position = { ((x * 16) + 8.0f) / 20, ((y * 16) + 8.0f) / 20 };
+				dynamicTileBodyId = b2CreateBody(worldid, &bodyDef);
+
+				b2Polygon dynamicBox = b2MakeBox(0.5f, 0.5f);
+				b2ShapeDef shapeDef = b2DefaultShapeDef();
+				shapeDef.density = 0.2f;
+				shapeDef.material.restitution = 0.5f;
+				shapeDef.material.friction = 0.3f;
+				b2CreatePolygonShape(dynamicTileBodyId, &shapeDef, &dynamicBox);
+				b2Vec2 position = b2Body_GetPosition(dynamicTileBodyId);
+				b2Rot rotation = b2Body_GetRotation(dynamicTileBodyId);
+				float angleRadians = atan2f(rotation.s, rotation.c);
+				float angleDegrees = angleRadians * (180.0f / 3.14159265f);
+				float x = position.x * 20;
+				float y = position.y * 20;
+				Rectangle tileRect = { x, y, m_tileSize, m_tileSize };
+				physicsBoxes.push_back(tileRect);
+				dynamicBodies.push_back(dynamicTileBodyId);
+				
+				
 			}
 		}
 	}
@@ -219,13 +269,33 @@ void TileMaps::handleCollision(Ball& plr, b2WorldId& worldId)
 				}
 			}
 
+			if (tile == tileType::physics_blocks)
+			{
+				for (size_t i = 0; i < dynamicBodies.size(); ++i)
+				{
+					b2Vec2 position = b2Body_GetPosition(dynamicBodies[i]);
+
+					float centerX = position.x * 20;
+					float centerY = position.y * 20;
+
+					physicsBoxes[i].x = centerX - (m_tileSize / 2.0f);
+					physicsBoxes[i].y = centerY - (m_tileSize / 2.0f);
+
+					if (CheckCollisionRecs(plrHitbox, physicsBoxes[i]))
+					{
+						isOnGround = true;
+					}
+				}
+			}
+
 			if (tile == tileType::lava)
 			{
 				Rectangle tileRect{ x * 16, y * 16, m_tileSize, m_tileSize };
 
 				if (CheckCollisionRecs(plrEntireBodyHitbox, tileRect))
 				{
-					b2Body_SetTransform(plr.getBodyId(), b2Vec2{ levelArray[currentLevelNum].startPos.x / 20, levelArray[currentLevelNum].startPos.y / 20 }, b2Rot{ 1.0f });
+					
+					tpPlrToStartPos(plr);
 					std::cout << b2Body_GetPosition(plr.getBodyId()).x * 20 << ", " << b2Body_GetPosition(plr.getBodyId()).y * 20 << "\n";
 				}
 			}
@@ -234,12 +304,13 @@ void TileMaps::handleCollision(Ball& plr, b2WorldId& worldId)
 			{
 				Rectangle tileRect{ x * 16, y * 16, m_tileSize, m_tileSize };
 
-				if (currentLevelNum + 1 <= levelArray.size())
+				if (currentLevelNum + 1 < levelArray.size())
 				{
 					if (CheckCollisionRecs(plrEntireBodyHitbox, tileRect))
 					{
 						levelArray[currentLevelNum + 1].canPlay = true;
 						++currentLevelNum;
+						tpPlrToStartPos(plr);
 						m_tilesInitialized = false;
 					}
 				}

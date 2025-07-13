@@ -38,6 +38,7 @@ extern struct map {
 
 extern map lvl1;
 extern map lvl2;
+extern map lvl3;
 
 extern std::vector<map> levelArray;
 
@@ -49,16 +50,20 @@ enum tileType
 	goal,
 	lava,
 	spawn,
-	right_slant
+	right_slant,
+	physics_blocks
 };
 
 class TileMaps
 {
 private:
 	int m_tileSize{ 20 };
-	int currentLevelNum{ 0 };
+	int currentLevelNum{ 2 };
 	std::vector<b2BodyId> bodies;
+	std::vector<b2BodyId> dynamicBodies;
+	std::vector<Rectangle> physicsBoxes;
 	b2BodyId tileBodyId = {};
+	b2BodyId dynamicTileBodyId = {};
 	bool m_tilesInitialized{ false };
 	std::unique_ptr<Texture2D> blockTexture = std::make_unique<Texture2D>();
 	std::unique_ptr<Texture2D> lavaTexture = std::make_unique<Texture2D>();
@@ -66,6 +71,7 @@ private:
 public:
 	
 	// Set member functions
+	void tpPlrToStartPos(Ball& plr);
 	void InitLevels();
 	void setCurrentLevelNum(int lvl);
 
